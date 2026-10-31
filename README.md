@@ -14,7 +14,10 @@ This README is the landing page and the **specification of the interface** (mast
 own README with everything that is specific to the family: the instances of the device, their settings and the status of
 the implementation.
 
-> **Status: design.** No implementation exists yet, the interface below is a proposal. Stories and branches follow.
+> **Status: STM32H5 implemented (`Dev/STM32H5`).** Unit tests pass on all 12 STM32H5 lines, integration
+> tests compile for the target but were not run on hardware (no board access). Deviations from this
+> specification (frame-ready signalling through the Gpdma transfer complete interrupt instead of
+> DCMI_RIS.FRAME_RIS, the large-frame DMA block repetition) are documented at the top of `Dcmi.c`.
 
 ---
 
@@ -69,13 +72,13 @@ master.
 
 | Family | Branch | Interface | Status |
 |---|---|---|---|
-| STM32H5 | `Dev/STM32H5` | `DCMI` on all lines except STM32H503: 8 / 10 / 12 / 14-bit bus, hardware and embedded synchronization, snapshot and continuous, crop, YCbCr 4:2:2, RGB565, monochrome / Bayer, JPEG; shares the pins with the `PSSI` (only one of them can be used) | planned (first) |
+| STM32H5 | `Dev/STM32H5` | `DCMI` on H523/H533/H562/H563/H573/H5E4/H5E5/H5F4/H5F5 (missing on H503/H543/H553, confirmed from the CMSIS headers; every function checks `defined(DCMI)` and only returns `DCMI_REQUEST_ERROR` there): 8 / 10 / 12 / 14-bit bus, hardware and embedded synchronization, snapshot and continuous, crop, YCbCr 4:2:2, RGB565, monochrome / Bayer, JPEG (JPEG mode accepted by the interface, not covered by the test set, no JPEG source on the test board); shares the pins, the RCC enable and the Gpdma request with the `PSSI` (only one of them can be used) | implemented |
 | STM32U5 | `Dev/STM32U5` | `DCMI` on the lines that have it | planned |
 | STM32H7 | `Dev/STM32H7` | `DCMI` | planned |
 | STM32F7 | `Dev/STM32F7` | `DCMI` | planned |
 | STM32F4 | `Dev/STM32F4` | `DCMI` on the F407 / F417 / F427 / F429 / F437 / F439 / F446 / F469 / F479 lines | planned |
 | STM32L4 | `Dev/STM32L4` | `DCMI` on the lines that have it | planned |
-| STM32G4, STM32U3 | `Dev/STM32G4`, `Dev/STM32U3` | no DCMI on the device - the module is a stub that returns `DCMI_REQUEST_ERROR` | planned |
+| STM32G4, STM32U3 | `Dev/STM32G4`, `Dev/STM32U3` | no DCMI on the device - every function checks the peripheral and returns `DCMI_REQUEST_ERROR` | planned |
 
 A function without a meaning in a family stays in the interface, returns `DCMI_REQUEST_ERROR` and suppresses the unused
 parameters (for example the 12 / 14-bit bus on a 10-bit interface, the JPEG mode of a device without it).
@@ -214,8 +217,8 @@ The module follows the common rules of the MCAL layer, so that it behaves like t
   configuration structure, the same request and the same callbacks (error, half transfer, transfer complete).
 - **Flags and states are enums of the module** (`dcmi_FunctionState_t`, `dcmi_FlagState_t`), the limits and the constants are
   named, there are no magic numbers in the interface.
-- **Unsupported functions stay.** A function without a meaning in a family keeps its signature, suppresses the unused
-  parameters and returns `DCMI_REQUEST_ERROR`.
+- **Every function stays in the interface.** A function without a meaning in a family, or on a device without the
+  peripheral, keeps its signature, suppresses the unused parameters and returns `DCMI_REQUEST_ERROR`.
 - **Documentation.** Every function and type has a Doxygen description, the main header has the `\defgroup`.
 
 ---
